@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Frutiger Aero - Task Time Allocator</title>
+
+    <!-- Tab Favicon with glossy purple-pink squircle and white clock icon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='aeroGrad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%23a855f7'/><stop offset='100%' stop-color='%23ec4899'/></linearGradient><linearGradient id='gloss' x1='0%' y1='0%' x2='0%' y2='100%'><stop offset='0%' stop-color='%23ffffff' stop-opacity='0.45'/><stop offset='50%' stop-color='%23ffffff' stop-opacity='0.05'/><stop offset='100%' stop-color='%23000000' stop-opacity='0.25'/></linearGradient></defs><rect x='2' y='2' width='60' height='60' rx='16' fill='url(%23aeroGrad)' stroke='%23ffffff' stroke-opacity='0.35' stroke-width='1.5'/><rect x='2' y='2' width='60' height='60' rx='16' fill='url(%23gloss)'/><path d='M20 22h24M20 32h24M20 42h16' fill='none' stroke='%23ffffff' stroke-width='4.5' stroke-linecap='round'/><circle cx='44' cy='42' r='4' fill='%23ffffff'/></svg>">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Font & Core Layout */
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #0d0614;
+            color: #f1f5f9;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Completely suppress default browser number input arrows */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        /* Dark Frutiger Aero Dynamic Backdrop */
+        .aero-bg {
+            background: 
+                radial-gradient(circle at 15% 15%, rgba(168, 85, 247, 0.38) 0%, transparent 40%),
+                radial-gradient(circle at 85% 25%, rgba(236, 72, 153, 0.35) 0%, transparent 45%),
+                radial-gradient(circle at 50% 75%, rgba(99, 102, 241, 0.35) 0%, transparent 50%),
+                linear-gradient(135deg, #0b0312 0%, #1a0b2e 50%, #0d031b 100%);
+            background-attachment: fixed;
+        }
+
+        /* Glossy Glassmorphic Panels */
+        .aero-card {
+            background: rgba(18, 14, 28, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 
+                0 10px 30px -5px rgba(0, 0, 0, 0.5),
+                inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
+            border-radius: 16px;
+        }
+
+        .aero-card-header {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Glossy Frutiger Buttons */
+        .aero-btn {
+            background: linear-gradient(180deg, rgba(168, 85, 247, 0.9) 0%, rgba(126, 34, 206, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 4px 12px rgba(147, 51, 234, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .aero-btn:hover {
+            background: linear-gradient(180deg, rgba(192, 132, 252, 0.95) 0%, rgba(147, 51, 234, 1) 100%);
+            box-shadow: 
+                0 6px 18px rgba(147, 51, 234, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            transform: translateY(-1px);
+        }
+
+        .aero-btn-secondary {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .aero-btn-secondary:hover {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 100%);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Form Inputs */
+        .aero-input {
+            background: rgba(10, 6, 18, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .aero-input:focus {
+            outline: none;
+            border-color: rgba(168, 85, 247, 0.8);
+            box-shadow: 
+                inset 0 2px 4px rgba(0, 0, 0, 0.5),
+                0 0 12px rgba(168, 85, 247, 0.4);
+        }
+
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1) sepia(1) saturate(5) hue-rotate(240deg);
+            cursor: pointer;
+        }
+
+        /* Badges */
+        .pill-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 5px rgba(0,0,0,0.3);
+            letter-spacing: 0.02em;
+        }
+
+        .badge-yellow { background: #eab308; color: #1e1b4b; }
+        .badge-orange { background: #f97316; color: #ffffff; }
+        .badge-purple { background: #a855f7; color: #ffffff; }
+        .badge-green { background: #22c55e; color: #052e16; }
+        .badge-blue { background: #3b82f6; color: #ffffff; }
+        .badge-amber { background: #d97706; color: #ffffff; }
+        .badge-red { background: #ef4444; color: #ffffff; }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 10, 25, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.5);
+        }
+    </style>
+</head>
+<body class="aero-bg flex flex-col min-h-screen text-slate-100 antialiased">
+
+    <header class="w-full border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 border border-white/30">
+                    <i class="fa-solid fa-clock-rotate-left text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        Task Allocator & Schedule Planner <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">Frutiger Aero</span>
+                    </h1>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button id="loadSampleBtn" class="aero-btn-secondary text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-list-check text-purple-300"></i> Sample Data
+                </button>
+                <button id="resetAllBtn" class="aero-btn-secondary text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-rose-300 hover:text-rose-200">
+                    <i class="fa-solid fa-trash-can text-rose-400"></i> Clear All
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Top Section: Fixed Schedule Constraints vs Allocation Parameters -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Panel: Fixed Schedule & Routine Constraints -->
+            <div class="lg:col-span-6 aero-card p-5 space-y-4 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <div class="aero-card-header -mx-5 -mt-5 p-4 mb-2 flex items-center justify-between">
+                        <div>
+                            <h2 class="font-bold text-sm tracking-wide text-purple-200 uppercase flex items-center gap-2">
+                                <i class="fa-solid fa-calendar-day text-amber-300"></i> Fixed Schedule Constraints
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Fixed events (Bedtime, Meetings, Dinner) tasks slot around.</p>
+                        </div>
+                        <span class="pill-badge badge-amber"><i class="fa-solid fa-lock text-[10px] text-white"></i> Fixed Events</span>
+                    </div>
+
+                    <!-- Day Timeline Parameters -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-play text-emerald-400"></i> Start Work Time
+                            </label>
+                            <input type="time" id="startTimeInput" class="aero-input w-full px-3 py-2 rounded-xl text-sm font-mono text-emerald-300">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-bed text-purple-300"></i> Target Bedtime
+                            </label>
+                            <input type="time" id="bedtimeInput" value="23:00" class="aero-input w-full px-3 py-2 rounded-xl text-sm font-mono text-purple-300">
+                        </div>
+                    </div>
+
+                    <!-- Add Fixed Schedule Item -->
+                    <div class="space-y-2 pt-3 border-t border-white/10">
+                        <label class="text-xs font-semibold text-slate-300 block">Add Fixed Event / Routine Block</label>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                            <input type="text" id="eventTitleInput" placeholder="Event Name (e.g. Dinner, Class)" class="sm:col-span-5 aero-input px-3 py-2 rounded-lg text-xs">
+                            
+                            <div class="sm:col-span-3 flex items-center gap-1">
+                                <input type="time" id="eventStartTimeInput" class="aero-input w-full px-2 py-2 rounded-lg text-xs font-mono text-amber-200" title="Start Time">
+                            </div>
+                            
+                            <div class="sm:col-span-3 flex items-center gap-1">
+                                <input type="time" id="eventEndTimeInput" class="aero-input w-full px-2 py-2 rounded-lg text-xs font-mono text-amber-200" title="End Time">
+                            </div>
+
+                            <button id="addEventBtn" class="sm:col-span-1 aero-btn py-2 rounded-lg text-white font-bold text-xs flex items-center justify-center" title="Add Fixed Event">
+                                <i class="fa-solid fa-plus text-white"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Fixed Events List -->
+                    <div id="fixedEventsContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        <!-- Dynamic Fixed Events List -->
+                    </div>
+                </div>
+
+                <!-- Calculated Available Work Time Info -->
+                <div class="bg-black/30 border border-white/10 rounded-xl p-3 flex items-center justify-between">
+                    <div>
+                        <div class="text-[11px] text-slate-400 font-medium">Calculated Free Work Time Window</div>
+                        <div id="calculatedWorkTimeText" class="text-xs text-amber-300 font-semibold mt-0.5">0 hours 0 mins available</div>
+                    </div>
+                    <button id="applyWorkTimeBtn" class="aero-btn-secondary text-xs px-3 py-1.5 rounded-lg text-purple-200 transition flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-right text-pink-400"></i> Sync To Allocator
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Task Allocation Input & Calculation Controls -->
+            <div class="lg:col-span-6 aero-card p-5 space-y-4 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <div class="aero-card-header -mx-5 -mt-5 p-4 mb-2 flex items-center justify-between">
+                        <div>
+                            <h2 class="font-bold text-sm tracking-wide text-purple-200 uppercase flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-pink-400"></i> Task Allocator Engine
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Distributes time proportionally in multiples of 5.</p>
+                        </div>
+                        <span class="pill-badge badge-purple"><i class="fa-solid fa-wand-magic-sparkles text-[10px] text-white"></i> Proportional</span>
+                    </div>
+
+                    <!-- Work Duration Input Field with Right-Aligned Clock Icon -->
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                            <span class="text-pink-300 flex items-center gap-1.5">
+                                Total Work Duration to Allocate
+                            </span>
+                            <span class="text-slate-400 text-[11px]">Minutes</span>
+                        </label>
+                        <div class="relative flex items-center">
+                            <input type="number" id="totalDurationInput" min="1" max="1440" value="205" placeholder="e.g. 205" class="aero-input w-full pl-4 pr-11 py-2.5 rounded-xl text-lg font-bold text-pink-200 tracking-wider">
+                            
+                            <!-- Bright glowing white/pink clock icon positioned on the RIGHT side -->
+                            <div class="absolute right-3.5 top-1/2 -translate-y-1/2 text-pink-300 text-base pointer-events-none flex items-center justify-center drop-shadow-[0_0_8px_rgba(244,114,182,0.6)]">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preset Duration Quick Buttons -->
+                    <div class="flex items-center justify-between text-xs pt-1">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[11px] text-slate-400 font-medium">Quick Presets:</span>
+                            <button onclick="setQuickDuration(60)" class="aero-btn-secondary text-[11px] px-2 py-0.5 rounded text-purple-200">60m</button>
+                            <button onclick="setQuickDuration(120)" class="aero-btn-secondary text-[11px] px-2 py-0.5 rounded text-purple-200">120m</button>
+                            <button onclick="setQuickDuration(205)" class="aero-btn-secondary text-[11px] px-2 py-0.5 rounded text-purple-200">205m</button>
+                            <button onclick="setQuickDuration(300)" class="aero-btn-secondary text-[11px] px-2 py-0.5 rounded text-purple-200">300m</button>
+                        </div>
+                    </div>
+
+                    <!-- Add New Task Form -->
+                    <div class="space-y-3 pt-3 border-t border-white/10">
+                        <label class="text-xs font-semibold text-slate-300 block">Add Task Item</label>
+                        
+                        <div class="space-y-2">
+                            <input type="text" id="taskTitleInput" placeholder="Task Title (e.g. Lang - Lewis, Titration...)" class="aero-input w-full px-3 py-2 rounded-lg text-xs">
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div class="space-y-1">
+                                    <label class="text-[11px] text-slate-400 font-medium">Length Rating</label>
+                                    <select id="taskRatingSelect" class="aero-input w-full px-3 py-2 rounded-lg text-xs font-medium">
+                                        <option value="1">1 - Short (1x Weight)</option>
+                                        <option value="2" selected>2 - Medium (2x Weight)</option>
+                                        <option value="3">3 - Long (3x Weight)</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end">
+                                    <button id="addTaskBtn" class="aero-btn w-full py-2 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1.5">
+                                        <i class="fa-solid fa-plus text-white"></i> Add Task
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="calculateBtn" class="aero-btn w-full py-3 rounded-xl text-white font-extrabold text-sm tracking-wide flex items-center justify-center gap-2 mt-4 shadow-lg shadow-purple-900/40">
+                    <i class="fa-solid fa-rotate text-xs text-purple-200"></i> Recalculate Schedule & Allocations
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary & Calculation Breakdown Banner -->
+        <div class="aero-card p-6 relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-pink-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="pill-badge badge-purple">
+                            <i class="fa-solid fa-equals text-white"></i> EXACT SUM ENGINE
+                        </span>
+                        <span id="matchStatusBadge" class="pill-badge badge-green">
+                            <i class="fa-solid fa-circle-check text-emerald-950"></i> EXACT MATCH
+                        </span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="text-xs text-slate-400 uppercase tracking-widest font-bold">Total Target vs Allocated</div>
+                        <div class="flex items-baseline gap-3">
+                            <h2 id="sumDisplay" class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-pink-200 to-white font-mono">
+                                0 / 205 mins
+                            </h2>
+                        </div>
+                        <p id="calculationSummarySubtext" class="text-xs text-slate-300 pt-1 leading-relaxed">
+                            Every task duration is rounded to a multiple of 5. Rounding adjustments are distributed based on standard fractional proximity.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Metric Breakdown Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-black/30 border border-white/10 rounded-xl p-3 text-center min-w-[90px]">
+                        <div class="text-[11px] text-slate-400 font-medium">Task Count</div>
+                        <div id="metricTaskCount" class="text-base font-bold text-white font-mono mt-0.5">0</div>
+                    </div>
+                    <div class="bg-black/30 border border-white/10 rounded-xl p-3 text-center min-w-[90px]">
+                        <div class="text-[11px] text-slate-400 font-medium">Total Rating Weight</div>
+                        <div id="metricTotalWeight" class="text-base font-bold text-purple-300 font-mono mt-0.5">0x</div>
+                    </div>
+                    <div class="bg-black/30 border border-white/10 rounded-xl p-3 text-center min-w-[90px]">
+                        <div class="text-[11px] text-slate-400 font-medium">Base Unit (1x)</div>
+                        <div id="metricBaseUnit" class="text-base font-bold text-emerald-400 font-mono mt-0.5">0m</div>
+                    </div>
+                    <div class="bg-black/30 border border-white/10 rounded-xl p-3 text-center min-w-[90px]">
+                        <div class="text-[11px] text-slate-400 font-medium">Rounding Delta</div>
+                        <div id="metricDelta" class="text-base font-bold text-pink-400 font-mono mt-0.5">0m</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Timeline Stacked Bar -->
+            <div class="mt-5 pt-4 border-t border-white/10 space-y-2">
+                <div class="flex items-center justify-between text-xs font-semibold">
+                    <span class="text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-chart-column text-pink-300"></i> Master Schedule Block Distribution
+                    </span>
+                    <span id="completionProgressText" class="text-slate-400 font-mono">0 / 0 Completed</span>
+                </div>
+
+                <div id="stackedAllocationBar" class="w-full h-4 bg-black/50 rounded-full overflow-hidden flex border border-white/10 p-0.5">
+                    <!-- Dynamic colorful task segments -->
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <div class="text-[11px] text-slate-400 flex items-center gap-1">
+                        Multiples of 5 verified <i class="fa-solid fa-check text-emerald-400 ml-0.5"></i>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="copyListBtn" class="aero-btn-secondary text-xs px-2.5 py-1 rounded-md font-medium text-slate-200 transition">
+                            <i class="fa-solid fa-copy text-purple-300 mr-1"></i> Copy Schedule
+                        </button>
+                        <button id="exportTxtBtn" class="aero-btn-secondary text-xs px-2.5 py-1 rounded-md font-medium text-slate-200 transition">
+                            <i class="fa-solid fa-download text-pink-300 mr-1"></i> Export TXT
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Combined Schedule & Timetable view -->
+        <div class="aero-card p-5 space-y-4">
+            <div class="aero-card-header -mx-5 -mt-5 p-4 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-sm tracking-wide text-purple-200 uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-clock text-purple-300"></i> Master Timeline & Task Schedule
+                    </h3>
+                    <p class="text-xs text-slate-400">Chronological view combining fixed routine blocks and allocated task items up to bedtime.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="activeCountBadge" class="pill-badge badge-blue">0 Items</span>
+                </div>
+            </div>
+
+            <!-- Task List Container -->
+            <div id="masterTimelineContainer" class="space-y-3 min-h-[160px]">
+                <!-- Dynamic task and schedule items rendered here -->
+            </div>
+        </div>
+    </main>
+
+    <footer class="w-full border-t border-white/10 bg-black/40 py-4 text-center text-xs text-slate-500">
+        Dark Frutiger Aero Task Time Allocator & Master Schedule Planner &bull; Helvetica Neue Typography
+    </footer>
+
+    <script>
+        // DOM Elements
+        const totalDurationInput = document.getElementById('totalDurationInput');
+        const taskTitleInput = document.getElementById('taskTitleInput');
+        const taskRatingSelect = document.getElementById('taskRatingSelect');
+        const startTimeInput = document.getElementById('startTimeInput');
+        const bedtimeInput = document.getElementById('bedtimeInput');
+        
+        const eventTitleInput = document.getElementById('eventTitleInput');
+        const eventStartTimeInput = document.getElementById('eventStartTimeInput');
+        const eventEndTimeInput = document.getElementById('eventEndTimeInput');
+        const addEventBtn = document.getElementById('addEventBtn');
+        const fixedEventsContainer = document.getElementById('fixedEventsContainer');
+        const calculatedWorkTimeText = document.getElementById('calculatedWorkTimeText');
+        const applyWorkTimeBtn = document.getElementById('applyWorkTimeBtn');
+
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const loadSampleBtn = document.getElementById('loadSampleBtn');
+        const resetAllBtn = document.getElementById('resetAllBtn');
+        const copyListBtn = document.getElementById('copyListBtn');
+        const exportTxtBtn = document.getElementById('exportTxtBtn');
+
+        const sumDisplay = document.getElementById('sumDisplay');
+        const matchStatusBadge = document.getElementById('matchStatusBadge');
+        const calculationSummarySubtext = document.getElementById('calculationSummarySubtext');
+
+        const metricTaskCount = document.getElementById('metricTaskCount');
+        const metricTotalWeight = document.getElementById('metricTotalWeight');
+        const metricBaseUnit = document.getElementById('metricBaseUnit');
+        const metricDelta = document.getElementById('metricDelta');
+
+        const stackedAllocationBar = document.getElementById('stackedAllocationBar');
+        const completionProgressText = document.getElementById('completionProgressText');
+        const masterTimelineContainer = document.getElementById('masterTimelineContainer');
+        const activeCountBadge = document.getElementById('activeCountBadge');
+
+        // Sample Task Data Pre-populated
+        const sampleTasks = [
+            { id: 1, title: 'lang', rating: 3, completed: false },
+            { id: 2, title: 'nhs', rating: 1, completed: false },
+            { id: 3, title: 'jazz', rating: 3, completed: false },
+            { id: 4, title: 'knowledge check', rating: 1, completed: false },
+            { id: 5, title: 'titration', rating: 2, completed: false },
+            { id: 6, title: 'lewis', rating: 3, completed: false },
+            { id: 7, title: 'annotations + space', rating: 2, completed: false },
+            { id: 8, title: 'wk5 warmups', rating: 1, completed: false },
+            { id: 9, title: 'secrets of the CC', rating: 3, completed: false },
+            { id: 10, title: 'discount', rating: 2, completed: false },
+            { id: 11, title: 'emerald solo (?)', rating: 2, completed: false },
+            { id: 12, title: 'identifying principles', rating: 1, completed: false },
+            { id: 13, title: 'brutus', rating: 1, completed: false },
+            { id: 14, title: 'wk4 warmups', rating: 1, completed: false }
+        ];
+
+        // Sample Fixed Events
+        const sampleEvents = [
+            { id: 101, title: 'Dinner & Break', startTime: '18:30', endTime: '19:15', isFixed: true },
+            { id: 102, title: 'Study Group Call', startTime: '20:15', endTime: '20:45', isFixed: true }
+        ];
+
+        // Main State
+        let tasks = [...sampleTasks.map(t => ({ ...t }))];
+        let fixedEvents = [...sampleEvents.map(e => ({ ...e }))];
+
+        // Palette for timeline segments
+        const colorPalette = [
+            'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-cyan-500',
+            'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-blue-500',
+            'bg-teal-500', 'bg-violet-500', 'bg-fuchsia-500', 'bg-sky-500'
+        ];
+
+        // Safe numeric parser helper
+        function getSanitizedInput(inputElement, defaultValue = 0) {
+            if (!inputElement || inputElement.value === undefined || inputElement.value === null) {
+                return defaultValue;
+            }
+            const cleanVal = String(inputElement.value).trim();
+            if (cleanVal === '') return defaultValue;
+            const parsed = parseInt(cleanVal, 10);
+            return isNaN(parsed) ? defaultValue : parsed;
+        }
+
+        // Quick Presets
+        function setQuickDuration(val) {
+            totalDurationInput.value = val;
+            calculateAndRender();
+        }
+
+        function calculateDurationFromTimes(startStr, endStr) {
+            if (!startStr || !endStr) return 0;
+            const [sh, sm] = startStr.split(':').map(Number);
+            const [eh, em] = endStr.split(':').map(Number);
+
+            if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 0;
+
+            let startMins = sh * 60 + sm;
+            let endMins = eh * 60 + em;
+
+            if (endMins <= startMins) {
+                endMins += 24 * 60;
+            }
+
+            return endMins - startMins;
+        }
+
+        function initDefaults() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            startTimeInput.value = `${h}:${m}`;
+            
+            const evtStart = new Date(now.getTime() + 60 * 60 * 1000);
+            const evtEnd = new Date(evtStart.getTime() + 30 * 60 * 1000);
+
+            eventStartTimeInput.value = `${String(evtStart.getHours()).padStart(2, '0')}:${String(evtStart.getMinutes()).padStart(2, '0')}`;
+            eventEndTimeInput.value = `${String(evtEnd.getHours()).padStart(2, '0')}:${String(evtEnd.getMinutes()).padStart(2, '0')}`;
+
+            updateFixedEventsUI();
+            calculateAndRender();
+        }
+
+        // Add Fixed Routine Event
+        addEventBtn.addEventListener('click', () => {
+            const title = eventTitleInput.value.trim() || 'Fixed Event';
+            const startVal = eventStartTimeInput.value;
+            const endVal = eventEndTimeInput.value;
+
+            if (!startVal) {
+                eventStartTimeInput.focus();
+                return;
+            }
+            if (!endVal) {
+                eventEndTimeInput.focus();
+                return;
+            }
+
+            const duration = calculateDurationFromTimes(startVal, endVal);
+
+            if (duration <= 0) {
+                alert("End time must be after start time.");
+                return;
+            }
+
+            fixedEvents.push({
+                id: Date.now(),
+                title: title,
+                startTime: startVal,
+                endTime: endVal,
+                duration: duration,
+                isFixed: true
+            });
+
+            eventTitleInput.value = '';
+            updateFixedEventsUI();
+            calculateAndRender();
+        });
+
+        function updateFixedEventsUI() {
+            fixedEventsContainer.innerHTML = '';
+
+            if (fixedEvents.length === 0) {
+                fixedEventsContainer.innerHTML = `
+                    <div class="text-xs text-slate-500 italic py-2">No fixed schedule blocks added.</div>
+                `;
+            } else {
+                fixedEvents.forEach(evt => {
+                    const dur = evt.duration || calculateDurationFromTimes(evt.startTime, evt.endTime);
+                    const row = document.createElement('div');
+                    row.className = "bg-black/40 border border-white/10 rounded-lg p-2 flex items-center justify-between text-xs";
+                    row.innerHTML = `
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <span class="pill-badge badge-amber text-[10px] shrink-0"><i class="fa-solid fa-lock text-[9px] text-white"></i> Fixed</span>
+                            <span class="font-semibold text-amber-200 truncate">${escapeHtml(evt.title)}</span>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <span class="font-mono text-slate-300 flex items-center gap-1">
+                                <i class="fa-regular fa-clock text-amber-300"></i> ${evt.startTime} - ${evt.endTime} (${dur}m)
+                            </span>
+                            <button onclick="removeFixedEvent(${evt.id})" class="text-slate-500 hover:text-rose-400 transition ml-1" title="Delete">
+                                <i class="fa-solid fa-xmark text-sm text-slate-400 hover:text-rose-400"></i>
+                            </button>
+                        </div>
+                    `;
+                    fixedEventsContainer.appendChild(row);
+                });
+            }
+
+            calculateAvailableWorkWindow();
+        }
+
+        window.removeFixedEvent = function(id) {
+            fixedEvents = fixedEvents.filter(e => e.id !== id);
+            updateFixedEventsUI();
+            calculateAndRender();
+        };
+
+        function calculateAvailableWorkWindow() {
+            if (!startTimeInput.value || !bedtimeInput.value) return 0;
+
+            const [startH, startM] = startTimeInput.value.split(':').map(Number);
+            const [bedH, bedM] = bedtimeInput.value.split(':').map(Number);
+
+            let startMs = (startH * 60 + startM) * 60 * 1000;
+            let bedMs = (bedH * 60 + bedM) * 60 * 1000;
+
+            if (bedMs <= startMs) {
+                bedMs += 24 * 60 * 60 * 1000;
+            }
+
+            let totalSpanMins = Math.round((bedMs - startMs) / (60 * 1000));
+
+            let fixedMins = fixedEvents.reduce((acc, e) => {
+                const dur = e.duration || calculateDurationFromTimes(e.startTime, e.endTime);
+                return acc + dur;
+            }, 0);
+
+            let netWorkMins = Math.max(0, totalSpanMins - fixedMins);
+
+            const hours = Math.floor(netWorkMins / 60);
+            const mins = netWorkMins % 60;
+            calculatedWorkTimeText.textContent = `${hours}h ${mins}m available focus time (excl. ${fixedMins}m fixed blocks)`;
+
+            return netWorkMins;
+        }
+
+        applyWorkTimeBtn.addEventListener('click', () => {
+            const avail = calculateAvailableWorkWindow();
+            if (avail > 0) {
+                totalDurationInput.value = avail;
+                calculateAndRender();
+            }
+        });
+
+        // Add Task Item
+        addTaskBtn.addEventListener('click', () => {
+            const title = taskTitleInput.value.trim();
+            const rating = getSanitizedInput(taskRatingSelect, 2);
+
+            if (!title) {
+                taskTitleInput.focus();
+                return;
+            }
+
+            tasks.push({
+                id: Date.now(),
+                title: title,
+                rating: Math.max(1, Math.min(3, rating)),
+                completed: false
+            });
+
+            taskTitleInput.value = '';
+            calculateAndRender();
+        });
+
+        taskTitleInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTaskBtn.click();
+        });
+
+        // Exact-Sum Multiple-of-5 Allocation Engine
+        function allocateTaskTimes() {
+            const targetTotal = getSanitizedInput(totalDurationInput, 0);
+
+            if (tasks.length === 0 || targetTotal <= 0) {
+                return { 
+                    allocatedTasks: [], 
+                    totalAllocated: 0, 
+                    targetTotal: targetTotal, 
+                    totalWeight: 0, 
+                    unroundedBaseUnit: 0 
+                };
+            }
+
+            const totalWeight = tasks.reduce((sum, t) => sum + (t.rating || 1), 0);
+            if (totalWeight <= 0) {
+                return { allocatedTasks: [], totalAllocated: 0, targetTotal: targetTotal, totalWeight: 0, unroundedBaseUnit: 0 };
+            }
+
+            const unroundedBaseUnit = targetTotal / totalWeight;
+
+            // Step 1: Initial proportional allocation and nearest-5 rounding
+            let items = tasks.map(t => {
+                const weight = t.rating || 1;
+                const exactRaw = weight * unroundedBaseUnit;
+                const roundedTo5 = Math.round(exactRaw / 5) * 5;
+                const minVal = Math.max(5, roundedTo5);
+                const residual = exactRaw - minVal;
+
+                return {
+                    ...t,
+                    exactRaw: exactRaw,
+                    allocated: minVal,
+                    residual: residual
+                };
+            });
+
+            let currentSum = items.reduce((sum, t) => sum + t.allocated, 0);
+            let diff = targetTotal - currentSum;
+
+            let iterations = 0;
+            const maxIterations = 500;
+
+            // Step 2: Adjust residuals in 5-minute increments until exact target sum is reached
+            while (diff !== 0 && iterations < maxIterations) {
+                iterations++;
+                if (diff > 0) {
+                    items.sort((a, b) => b.residual - a.residual);
+                    items[0].allocated += 5;
+                    items[0].residual -= 5;
+                    diff -= 5;
+                } else {
+                    items.sort((a, b) => a.residual - b.residual);
+                    let targetItem = items.find(i => i.allocated > 5) || items[0];
+                    targetItem.allocated -= 5;
+                    targetItem.residual += 5;
+                    diff += 5;
+                }
+            }
+
+            // Restore original task order
+            const orderMap = new Map(tasks.map((t, idx) => [t.id, idx]));
+            items.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+
+            return {
+                allocatedTasks: items,
+                totalAllocated: targetTotal,
+                targetTotal: targetTotal,
+                totalWeight: totalWeight,
+                unroundedBaseUnit: unroundedBaseUnit
+            };
+        }
+
+        // Render Combined Master Timeline and Views
+        function calculateAndRender() {
+            calculateAvailableWorkWindow();
+
+            const { allocatedTasks, totalAllocated, targetTotal, totalWeight, unroundedBaseUnit } = allocateTaskTimes();
+
+            sumDisplay.textContent = `${totalAllocated} / ${targetTotal} mins`;
+            
+            if (targetTotal <= 0) {
+                matchStatusBadge.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-200"></i> INVALID TIME`;
+                matchStatusBadge.className = "pill-badge badge-red";
+                calculationSummarySubtext.textContent = `Please enter a total duration greater than 0 minutes.`;
+            } else if (allocatedTasks.length === 0) {
+                matchStatusBadge.innerHTML = `<i class="fa-solid fa-circle-info text-amber-950"></i> NO TASKS`;
+                matchStatusBadge.className = "pill-badge badge-yellow";
+                calculationSummarySubtext.textContent = `Add task items to compute proportional time allocations.`;
+            } else if (totalAllocated === targetTotal) {
+                matchStatusBadge.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-950"></i> EXACT MATCH`;
+                matchStatusBadge.className = "pill-badge badge-green";
+                calculationSummarySubtext.textContent = `All ${allocatedTasks.length} task durations are exact multiples of 5 and sum to precisely ${targetTotal} minutes.`;
+            }
+
+            metricTaskCount.textContent = allocatedTasks.length;
+            metricTotalWeight.textContent = `${totalWeight}x`;
+            metricBaseUnit.textContent = `${unroundedBaseUnit.toFixed(1)}m`;
+
+            const unadjustedNearestSum = allocatedTasks.reduce((sum, t) => sum + (Math.round(t.exactRaw / 5) * 5), 0);
+            const delta = totalAllocated - unadjustedNearestSum;
+            metricDelta.textContent = `${delta >= 0 ? '+' : ''}${delta}m`;
+
+            renderStackedBar(allocatedTasks, targetTotal);
+            renderMasterTimeline(allocatedTasks);
+        }
+
+        function renderStackedBar(allocatedTasks, targetTotal) {
+            stackedAllocationBar.innerHTML = '';
+            
+            if (allocatedTasks.length === 0 || targetTotal <= 0) return;
+
+            allocatedTasks.forEach((task, idx) => {
+                const pct = Math.max(0, (task.allocated / targetTotal) * 100);
+                const seg = document.createElement('div');
+                const color = colorPalette[idx % colorPalette.length];
+                
+                seg.className = `h-full ${color} transition-all cursor-pointer relative hover:brightness-125`;
+                seg.style.width = `${pct}%`;
+                seg.title = `${task.title}: ${task.allocated} mins (${pct.toFixed(1)}%)`;
+
+                stackedAllocationBar.appendChild(seg);
+            });
+
+            const completedCount = tasks.filter(t => t.completed).length;
+            completionProgressText.textContent = `${completedCount} / ${tasks.length} Completed`;
+        }
+
+        function renderMasterTimeline(allocatedTasks) {
+            masterTimelineContainer.innerHTML = '';
+
+            const totalItemsCount = allocatedTasks.length + fixedEvents.length;
+            activeCountBadge.textContent = `${totalItemsCount} Schedule Items`;
+
+            if (totalItemsCount === 0) {
+                masterTimelineContainer.innerHTML = `
+                    <div class="py-10 text-center text-slate-500 font-medium">
+                        <i class="fa-solid fa-calendar-xmark text-3xl mb-2 text-purple-300 block"></i>
+                        No schedule items or tasks available. Add items above to build your timeline.
+                    </div>
+                `;
+                return;
+            }
+
+            // Construct Chronological Schedule Engine
+            let startBase = new Date();
+            if (startTimeInput.value) {
+                const [sh, sm] = startTimeInput.value.split(':').map(Number);
+                if (!isNaN(sh) && !isNaN(sm)) {
+                    startBase.setHours(sh, sm, 0, 0);
+                }
+            }
+
+            let currentCursor = new Date(startBase.getTime());
+            let taskQueue = [...allocatedTasks];
+
+            let fixedQueue = fixedEvents.map(evt => {
+                const [eh, em] = evt.startTime.split(':').map(Number);
+                let evtDate = new Date(startBase.getTime());
+                evtDate.setHours(eh, em, 0, 0);
+                if (evtDate < startBase) {
+                    evtDate.setDate(evtDate.getDate() + 1);
+                }
+
+                const dur = evt.duration || calculateDurationFromTimes(evt.startTime, evt.endTime);
+
+                return { ...evt, duration: dur, eventDate: evtDate };
+            }).sort((a, b) => a.eventDate - b.eventDate);
+
+            let masterTimelineItems = [];
+
+            while (taskQueue.length > 0 || fixedQueue.length > 0) {
+                if (fixedQueue.length > 0 && fixedQueue[0].eventDate <= currentCursor) {
+                    let evt = fixedQueue.shift();
+                    let evtEnd = new Date(evt.eventDate.getTime() + evt.duration * 60 * 1000);
+                    masterTimelineItems.push({
+                        type: 'FIXED',
+                        title: evt.title,
+                        duration: evt.duration,
+                        startTimeStr: formatTimeShort(evt.eventDate),
+                        endTimeStr: formatTimeShort(evtEnd),
+                        isFixed: true
+                    });
+                    currentCursor = evtEnd;
+                } else if (taskQueue.length > 0) {
+                    let task = taskQueue.shift();
+                    let taskEnd = new Date(currentCursor.getTime() + task.allocated * 60 * 1000);
+
+                    if (fixedQueue.length > 0 && fixedQueue[0].eventDate < taskEnd) {
+                        let nextFixed = fixedQueue[0];
+                        let minutesBeforeFixed = Math.round((nextFixed.eventDate - currentCursor) / (60 * 1000));
+                        
+                        if (minutesBeforeFixed >= 5) {
+                            masterTimelineItems.push({
+                                type: 'TASK',
+                                ...task,
+                                allocated: minutesBeforeFixed,
+                                startTimeStr: formatTimeShort(currentCursor),
+                                endTimeStr: formatTimeShort(nextFixed.eventDate)
+                            });
+                            currentCursor = nextFixed.eventDate;
+                        }
+                    } else {
+                        masterTimelineItems.push({
+                            type: 'TASK',
+                            ...task,
+                            startTimeStr: formatTimeShort(currentCursor),
+                            endTimeStr: formatTimeShort(taskEnd)
+                        });
+                        currentCursor = taskEnd;
+                    }
+                } else if (fixedQueue.length > 0) {
+                    let evt = fixedQueue.shift();
+                    currentCursor = new Date(evt.eventDate.getTime());
+                    let evtEnd = new Date(currentCursor.getTime() + evt.duration * 60 * 1000);
+                    masterTimelineItems.push({
+                        type: 'FIXED',
+                        title: evt.title,
+                        duration: evt.duration,
+                        startTimeStr: formatTimeShort(currentCursor),
+                        endTimeStr: formatTimeShort(evtEnd),
+                        isFixed: true
+                    });
+                    currentCursor = evtEnd;
+                }
+            }
+
+            // Render Task & Schedule Item Cards
+            masterTimelineItems.forEach(item => {
+                const card = document.createElement('div');
+
+                if (item.type === 'FIXED') {
+                    card.className = "aero-card p-3.5 border-l-4 border-l-amber-500 bg-amber-950/20 flex items-center justify-between text-xs";
+                    card.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <span class="pill-badge badge-amber"><i class="fa-solid fa-lock text-[10px] text-white"></i> Fixed Event</span>
+                            <span class="font-bold text-amber-200 truncate">${escapeHtml(item.title)}</span>
+                        </div>
+                        <div class="flex items-center gap-4 shrink-0 font-mono text-slate-300">
+                            <span class="text-amber-300 font-semibold">${item.duration} mins</span>
+                            <span class="text-slate-200 flex items-center gap-1">
+                                <i class="fa-regular fa-clock text-amber-300 mr-0.5"></i> ${item.startTimeStr} - ${item.endTimeStr}
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    let ratingBadgeClass = "badge-blue";
+                    let ratingLabel = "1x Short";
+                    if (item.rating === 2) {
+                        ratingBadgeClass = "badge-purple";
+                        ratingLabel = "2x Medium";
+                    } else if (item.rating === 3) {
+                        ratingBadgeClass = "badge-orange";
+                        ratingLabel = "3x Long";
+                    }
+
+                    card.className = `aero-card p-4 space-y-2.5 relative flex flex-col justify-between transition hover:border-white/30 ${item.completed ? 'opacity-50' : ''}`;
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5 overflow-hidden">
+                                <input type="checkbox" id="check-${item.id}" ${item.completed ? 'checked' : ''} class="task-checkbox w-4 h-4 rounded border-white/20 bg-black/40 text-purple-600 focus:ring-purple-500 cursor-pointer">
+                                <label for="check-${item.id}" class="font-bold text-sm text-slate-100 truncate cursor-pointer hover:text-purple-300 transition">
+                                    ${escapeHtml(item.title)}
+                                </label>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="pill-badge ${ratingBadgeClass}">
+                                    ${ratingLabel}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-baseline justify-between pt-1">
+                            <div class="text-2xl font-black text-pink-300 font-mono tracking-tight">
+                                ${item.allocated} <span class="text-xs font-normal text-slate-400">mins</span>
+                            </div>
+                            <div class="text-right text-xs font-mono text-slate-300">
+                                <div class="flex items-center justify-end gap-1">
+                                    <i class="fa-regular fa-clock text-pink-300"></i>
+                                    <span>${item.startTimeStr} - ${item.endTimeStr}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+                            <span class="text-slate-400">Unrounded: ${(item.exactRaw || item.allocated).toFixed(1)}m</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="editTask(${item.id})" class="hover:text-purple-300 transition text-slate-300" title="Edit Task">
+                                    <i class="fa-solid fa-pen text-xs text-purple-300"></i>
+                                </button>
+                                <button onclick="removeTask(${item.id})" class="hover:text-rose-400 transition text-slate-300" title="Delete Task">
+                                    <i class="fa-solid fa-trash-can text-xs text-rose-400"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    const checkbox = card.querySelector(`#check-${item.id}`);
+                    if (checkbox) {
+                        checkbox.addEventListener('change', (e) => {
+                            const found = tasks.find(t => t.id === item.id);
+                            if (found) {
+                                found.completed = e.target.checked;
+                                calculateAndRender();
+                            }
+                        });
+                    }
+                }
+
+                masterTimelineContainer.appendChild(card);
+            });
+        }
+
+        window.removeTask = function(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            calculateAndRender();
+        };
+
+        window.editTask = function(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            const newTitle = prompt("Edit Task Name:", task.title);
+            if (newTitle !== null && newTitle.trim() !== "") {
+                task.title = newTitle.trim();
+                const newRating = prompt("Edit Duration Rating (1 = Short, 2 = Medium, 3 = Long):", task.rating);
+                if (newRating && ['1', '2', '3'].includes(newRating.trim())) {
+                    task.rating = parseInt(newRating.trim(), 10);
+                }
+                calculateAndRender();
+            }
+        };
+
+        function formatTimeShort(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+
+        // Event listeners for smooth live updates
+        totalDurationInput.addEventListener('input', calculateAndRender);
+        totalDurationInput.addEventListener('keyup', calculateAndRender);
+        totalDurationInput.addEventListener('change', calculateAndRender);
+        totalDurationInput.addEventListener('blur', () => {
+            if (totalDurationInput.value.trim() === '' || parseInt(totalDurationInput.value, 10) <= 0) {
+                totalDurationInput.value = 205;
+                calculateAndRender();
+            }
+        });
+
+        startTimeInput.addEventListener('change', calculateAndRender);
+        bedtimeInput.addEventListener('change', calculateAndRender);
+        calculateBtn.addEventListener('click', calculateAndRender);
+
+        loadSampleBtn.addEventListener('click', () => {
+            tasks = [...sampleTasks.map(t => ({ ...t }))];
+            fixedEvents = [...sampleEvents.map(e => ({ ...e }))];
+            totalDurationInput.value = 205;
+            updateFixedEventsUI();
+            calculateAndRender();
+        });
+
+        resetAllBtn.addEventListener('click', () => {
+            tasks = [];
+            fixedEvents = [];
+            updateFixedEventsUI();
+            calculateAndRender();
+        });
+
+        copyListBtn.addEventListener('click', () => {
+            const { allocatedTasks, targetTotal } = allocateTaskTimes();
+            if (allocatedTasks.length === 0 && fixedEvents.length === 0) return;
+
+            let text = `Master Schedule & Task Allocations (Total Focus Time: ${targetTotal} mins):\n`;
+            text += `----------------------------------------------------------\n`;
+            fixedEvents.forEach(e => {
+                text += `[FIXED EVENT] ${e.title} @ ${e.startTime} - ${e.endTime} (${e.duration} mins)\n`;
+            });
+            allocatedTasks.forEach(t => {
+                text += `• ${t.title} - ${t.allocated} mins\n`;
+            });
+
+            const dummy = document.createElement('textarea');
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+
+            copyListBtn.innerHTML = `<i class="fa-solid fa-check text-emerald-400 mr-1"></i> Copied!`;
+            setTimeout(() => {
+                copyListBtn.innerHTML = `<i class="fa-solid fa-copy text-purple-300 mr-1"></i> Copy Schedule`;
+            }, 2000);
+        });
+
+        exportTxtBtn.addEventListener('click', () => {
+            const { allocatedTasks, targetTotal } = allocateTaskTimes();
+            if (allocatedTasks.length === 0 && fixedEvents.length === 0) return;
+
+            let text = `Master Daily Schedule & Task Allocations\n`;
+            text += `Total Allocated Focus Time: ${targetTotal} minutes\n`;
+            text += `Target Bedtime: ${bedtimeInput.value}\n`;
+            text += `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}\n`;
+            text += `========================================================\n\n`;
+
+            if (fixedEvents.length > 0) {
+                text += `FIXED ROUTINE BLOCKS:\n`;
+                fixedEvents.forEach((e, i) => {
+                    text += `${i + 1}. ${e.title} (${e.startTime} - ${e.endTime}) [${e.duration} mins]\n`;
+                });
+                text += `\n`;
+            }
+
+            text += `ALLOCATED WORK TASKS:\n`;
+            allocatedTasks.forEach((t, i) => {
+                text += `${i + 1}. [${t.completed ? 'X' : ' '}] ${t.title} - ${t.allocated} minutes (Weight: ${t.rating}x)\n`;
+            });
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `master-schedule-${targetTotal}m.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', initDefaults);
+    </script>
+</body>
+</html>
