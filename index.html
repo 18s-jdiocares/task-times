@@ -112,6 +112,20 @@
             cursor: pointer;
         }
 
+        /* Drag & Drop Visual Styles */
+        .draggable-card {
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .draggable-card:active {
+            cursor: grabbing;
+        }
+        .draggable-card.dragging {
+            opacity: 0.4;
+            transform: scale(0.98);
+            border-color: rgba(168, 85, 247, 0.8);
+        }
+
         /* Badges */
         .pill-badge {
             font-size: 0.75rem;
@@ -427,6 +441,68 @@
         </div>
     </main>
 
+    <!-- Modal for Editing Cards (Fixed Events & Tasks) -->
+    <div id="editModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md hidden">
+        <div class="aero-card max-w-md w-full p-6 mx-4 space-y-4 shadow-2xl relative border border-white/20">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 id="editModalTitle" class="font-bold text-base text-purple-200 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-pink-400"></i> Edit Item
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white text-lg font-bold">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="editModalItemId">
+            <input type="hidden" id="editModalItemType">
+
+            <div class="space-y-4">
+                <!-- Title Input -->
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-slate-300">Title</label>
+                    <input type="text" id="editModalTitleInput" class="aero-input w-full px-3 py-2 rounded-lg text-sm">
+                </div>
+
+                <!-- Fields for Fixed Events -->
+                <div id="fixedEventFields" class="grid grid-cols-2 gap-3 hidden">
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-slate-300">Start Time</label>
+                        <input type="time" id="editModalStartTimeInput" class="aero-input w-full px-3 py-2 rounded-lg text-sm font-mono text-amber-200">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-slate-300">End Time</label>
+                        <input type="time" id="editModalEndTimeInput" class="aero-input w-full px-3 py-2 rounded-lg text-sm font-mono text-amber-200">
+                    </div>
+                </div>
+
+                <!-- Fields for Dynamic Tasks -->
+                <div id="taskFields" class="space-y-3 hidden">
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-slate-300">Length Rating</label>
+                        <select id="editModalRatingSelect" class="aero-input w-full px-3 py-2 rounded-lg text-xs font-medium">
+                            <option value="1">1 - Short (1x Weight)</option>
+                            <option value="2">2 - Medium (2x Weight)</option>
+                            <option value="3">3 - Long (3x Weight)</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                            <span>Fixed Length (Minutes)</span>
+                            <span class="text-[10px] text-slate-400">Leave empty/0 for auto proportional time</span>
+                        </label>
+                        <input type="number" id="editModalFixedDurationInput" placeholder="e.g. 20 (multiples of 5)" min="0" step="5" class="aero-input w-full px-3 py-2 rounded-lg text-sm font-mono text-teal-300">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+                <button onclick="closeEditModal()" class="aero-btn-secondary px-4 py-2 rounded-lg text-xs font-semibold text-slate-300">Cancel</button>
+                <button onclick="saveEditModal()" class="aero-btn px-4 py-2 rounded-lg text-xs font-bold text-white">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <footer class="w-full border-t border-white/10 bg-black/40 py-4 text-center text-xs text-slate-500">
         Dark Frutiger Aero Task Time Allocator & Master Schedule Planner &bull; Helvetica Neue Typography
     </footer>
@@ -469,6 +545,19 @@
         const masterTimelineContainer = document.getElementById('masterTimelineContainer');
         const activeCountBadge = document.getElementById('activeCountBadge');
 
+        // Modal Elements
+        const editModal = document.getElementById('editModal');
+        const editModalTitle = document.getElementById('editModalTitle');
+        const editModalItemId = document.getElementById('editModalItemId');
+        const editModalItemType = document.getElementById('editModalItemType');
+        const editModalTitleInput = document.getElementById('editModalTitleInput');
+        const fixedEventFields = document.getElementById('fixedEventFields');
+        const editModalStartTimeInput = document.getElementById('editModalStartTimeInput');
+        const editModalEndTimeInput = document.getElementById('editModalEndTimeInput');
+        const taskFields = document.getElementById('taskFields');
+        const editModalRatingSelect = document.getElementById('editModalRatingSelect');
+        const editModalFixedDurationInput = document.getElementById('editModalFixedDurationInput');
+
         // Sample Task Data
         const sampleTasks = [
             { id: 1, title: 'lang', rating: 3, completed: false, fixedDuration: null },
@@ -496,6 +585,7 @@
         // Main State
         let tasks = [...sampleTasks.map(t => ({ ...t }))];
         let fixedEvents = [...sampleEvents.map(e => ({ ...e }))];
+        let draggedTaskId = null;
 
         // Color Palette
         const colorPalette = [
@@ -640,6 +730,9 @@
                             <span class="font-mono text-slate-300 flex items-center gap-1">
                                 <i class="fa-regular fa-clock text-amber-300"></i> ${evt.startTime} - ${evt.endTime} (${dur}m)
                             </span>
+                            <button onclick="openEditModal(${evt.id}, 'FIXED')" class="text-slate-400 hover:text-purple-300 transition" title="Edit Event Times">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
                             <button onclick="removeFixedEvent(${evt.id})" class="text-slate-500 hover:text-rose-400 transition ml-1" title="Delete">
                                 <i class="fa-solid fa-xmark text-sm text-slate-400 hover:text-rose-400"></i>
                             </button>
@@ -720,21 +813,6 @@
             if (e.key === 'Enter') addTaskBtn.click();
         });
 
-        // Reordering Tasks Engine
-        window.moveTask = function(id, direction) {
-            const idx = tasks.findIndex(t => t.id === id);
-            if (idx === -1) return;
-
-            const targetIdx = idx + direction;
-            if (targetIdx < 0 || targetIdx >= tasks.length) return;
-
-            const temp = tasks[idx];
-            tasks[idx] = tasks[targetIdx];
-            tasks[targetIdx] = temp;
-
-            calculateAndRender();
-        };
-
         // Toggle / Edit Task Fixed Time
         window.toggleTaskFixedTime = function(id) {
             const task = tasks.find(t => t.id === id);
@@ -743,16 +821,147 @@
             if (task.fixedDuration !== null) {
                 task.fixedDuration = null;
             } else {
-                const inputVal = prompt(`Set fixed length in minutes for "${task.title}":`, "20");
-                if (inputVal !== null) {
-                    const parsed = parseInt(inputVal.trim(), 10);
-                    if (!isNaN(parsed) && parsed > 0) {
-                        task.fixedDuration = Math.round(parsed / 5) * 5 || 5;
-                    }
-                }
+                openEditModal(id, 'TASK');
+                return;
             }
             calculateAndRender();
         };
+
+        // Modal Edit Management
+        window.openEditModal = function(id, type) {
+            editModalItemId.value = id;
+            editModalItemType.value = type;
+
+            if (type === 'FIXED') {
+                const evt = fixedEvents.find(e => e.id === id);
+                if (!evt) return;
+                editModalTitle.innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-400"></i> Edit Fixed Event`;
+                editModalTitleInput.value = evt.title;
+                editModalStartTimeInput.value = evt.startTime;
+                editModalEndTimeInput.value = evt.endTime;
+
+                fixedEventFields.classList.remove('hidden');
+                taskFields.classList.add('hidden');
+            } else {
+                const task = tasks.find(t => t.id === id);
+                if (!task) return;
+                editModalTitle.innerHTML = `<i class="fa-solid fa-pen-to-square text-pink-400"></i> Edit Task Item`;
+                editModalTitleInput.value = task.title;
+                editModalRatingSelect.value = task.rating || 2;
+                editModalFixedDurationInput.value = task.fixedDuration !== null ? task.fixedDuration : '';
+
+                fixedEventFields.classList.add('hidden');
+                taskFields.classList.remove('hidden');
+            }
+
+            editModal.classList.remove('hidden');
+        };
+
+        window.closeEditModal = function() {
+            editModal.classList.add('hidden');
+        };
+
+        window.saveEditModal = function() {
+            const id = parseInt(editModalItemId.value, 10);
+            const type = editModalItemType.value;
+            const newTitle = editModalTitleInput.value.trim();
+
+            if (!newTitle) {
+                alert('Title cannot be empty');
+                return;
+            }
+
+            if (type === 'FIXED') {
+                const evt = fixedEvents.find(e => e.id === id);
+                if (evt) {
+                    const startVal = editModalStartTimeInput.value;
+                    const endVal = editModalEndTimeInput.value;
+                    const dur = calculateDurationFromTimes(startVal, endVal);
+
+                    if (dur <= 0) {
+                        alert('End time must be after start time.');
+                        return;
+                    }
+
+                    evt.title = newTitle;
+                    evt.startTime = startVal;
+                    evt.endTime = endVal;
+                    evt.duration = dur;
+
+                    updateFixedEventsUI();
+                }
+            } else {
+                const task = tasks.find(t => t.id === id);
+                if (task) {
+                    task.title = newTitle;
+                    task.rating = parseInt(editModalRatingSelect.value, 10);
+                    
+                    const fixVal = editModalFixedDurationInput.value.trim();
+                    if (fixVal !== '' && !isNaN(parseInt(fixVal, 10)) && parseInt(fixVal, 10) > 0) {
+                        const parsed = parseInt(fixVal, 10);
+                        task.fixedDuration = Math.round(parsed / 5) * 5 || 5;
+                    } else {
+                        task.fixedDuration = null;
+                    }
+                }
+            }
+
+            closeEditModal();
+            calculateAndRender();
+        };
+
+        // Drag and Drop Event Handlers
+        function handleDragStart(e) {
+            const card = e.currentTarget;
+            draggedTaskId = parseInt(card.getAttribute('data-id'), 10);
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedTaskId);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            const targetCard = e.currentTarget;
+            if (targetCard && targetCard.classList.contains('draggable-card')) {
+                targetCard.classList.add('border-purple-400');
+            }
+        }
+
+        function handleDragLeave(e) {
+            const targetCard = e.currentTarget;
+            if (targetCard && targetCard.classList.contains('draggable-card')) {
+                targetCard.classList.remove('border-purple-400');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetCard = e.currentTarget;
+            targetCard.classList.remove('border-purple-400');
+
+            const targetId = parseInt(targetCard.getAttribute('data-id'), 10);
+            if (draggedTaskId === null || draggedTaskId === targetId) return;
+
+            const dragIdx = tasks.findIndex(t => t.id === draggedTaskId);
+            const targetIdx = tasks.findIndex(t => t.id === targetId);
+
+            if (dragIdx !== -1 && targetIdx !== -1) {
+                const [movedTask] = tasks.splice(dragIdx, 1);
+                tasks.splice(targetIdx, 0, movedTask);
+                calculateAndRender();
+            }
+        }
+
+        function handleDragEnd(e) {
+            const card = e.currentTarget;
+            card.classList.remove('dragging');
+            draggedTaskId = null;
+        }
 
         // Allocation Engine supporting fixed-length task overrides
         function allocateTaskTimes() {
@@ -957,6 +1166,7 @@
                     let evtEnd = new Date(evt.eventDate.getTime() + evt.duration * 60 * 1000);
                     masterTimelineItems.push({
                         type: 'FIXED',
+                        id: evt.id,
                         title: evt.title,
                         duration: evt.duration,
                         startTimeStr: formatTimeShort(evt.eventDate),
@@ -997,6 +1207,7 @@
                     let evtEnd = new Date(currentCursor.getTime() + evt.duration * 60 * 1000);
                     masterTimelineItems.push({
                         type: 'FIXED',
+                        id: evt.id,
                         title: evt.title,
                         duration: evt.duration,
                         startTimeStr: formatTimeShort(currentCursor),
@@ -1007,7 +1218,7 @@
                 }
             }
 
-            masterTimelineItems.forEach((item, itemIndex) => {
+            masterTimelineItems.forEach((item) => {
                 const card = document.createElement('div');
 
                 if (item.type === 'FIXED') {
@@ -1017,11 +1228,14 @@
                             <span class="pill-badge badge-amber"><i class="fa-solid fa-lock text-[10px] text-white"></i> Fixed Event</span>
                             <span class="font-bold text-amber-200 truncate">${escapeHtml(item.title)}</span>
                         </div>
-                        <div class="flex items-center gap-4 shrink-0 font-mono text-slate-300">
+                        <div class="flex items-center gap-3 shrink-0 font-mono text-slate-300">
                             <span class="text-amber-300 font-semibold">${item.duration} mins</span>
                             <span class="text-slate-200 flex items-center gap-1">
                                 <i class="fa-regular fa-clock text-amber-300 mr-0.5"></i> ${item.startTimeStr} - ${item.endTimeStr}
                             </span>
+                            <button onclick="openEditModal(${item.id}, 'FIXED')" class="text-slate-400 hover:text-purple-300 transition ml-2" title="Edit Event Times">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
                         </div>
                     `;
                 } else {
@@ -1037,18 +1251,23 @@
 
                     const isFixedTask = item.fixedDuration !== null && item.fixedDuration > 0;
 
-                    card.className = `aero-card p-4 space-y-2.5 relative flex flex-col justify-between transition hover:border-white/30 ${item.completed ? 'opacity-50' : ''}`;
+                    card.className = `draggable-card aero-card p-4 space-y-2.5 relative flex flex-col justify-between transition hover:border-white/30 ${item.completed ? 'opacity-50' : ''}`;
+                    card.setAttribute('draggable', 'true');
+                    card.setAttribute('data-id', item.id);
+
+                    // Attach Drag and Drop event listeners
+                    card.addEventListener('dragstart', handleDragStart);
+                    card.addEventListener('dragover', handleDragOver);
+                    card.addEventListener('dragenter', handleDragEnter);
+                    card.addEventListener('dragleave', handleDragLeave);
+                    card.addEventListener('drop', handleDrop);
+                    card.addEventListener('dragend', handleDragEnd);
+
                     card.innerHTML = `
                         <div class="flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2 overflow-hidden">
-                                <!-- Reorder Buttons -->
-                                <div class="flex flex-col gap-0.5 shrink-0 pr-1">
-                                    <button onclick="moveTask(${item.id}, -1)" class="text-slate-400 hover:text-purple-300 text-[10px] transition" title="Move Up">
-                                        <i class="fa-solid fa-chevron-up"></i>
-                                    </button>
-                                    <button onclick="moveTask(${item.id}, 1)" class="text-slate-400 hover:text-purple-300 text-[10px] transition" title="Move Down">
-                                        <i class="fa-solid fa-chevron-down"></i>
-                                    </button>
+                                <div class="cursor-grab active:cursor-grabbing text-slate-500 hover:text-purple-300 px-1 py-0.5" title="Drag to reorder">
+                                    <i class="fa-solid fa-grip-vertical"></i>
                                 </div>
 
                                 <input type="checkbox" id="check-${item.id}" ${item.completed ? 'checked' : ''} class="task-checkbox w-4 h-4 rounded border-white/20 bg-black/40 text-purple-600 focus:ring-purple-500 cursor-pointer">
@@ -1084,7 +1303,7 @@
                         <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
                             <span class="text-slate-400">Unrounded: ${(item.exactRaw || item.allocated).toFixed(1)}m</span>
                             <div class="flex items-center gap-2">
-                                <button onclick="editTask(${item.id})" class="hover:text-purple-300 transition text-slate-300" title="Edit Task">
+                                <button onclick="openEditModal(${item.id}, 'TASK')" class="hover:text-purple-300 transition text-slate-300" title="Edit Task">
                                     <i class="fa-solid fa-pen text-xs text-purple-300"></i>
                                 </button>
                                 <button onclick="removeTask(${item.id})" class="hover:text-rose-400 transition text-slate-300" title="Delete Task">
@@ -1113,21 +1332,6 @@
         window.removeTask = function(id) {
             tasks = tasks.filter(t => t.id !== id);
             calculateAndRender();
-        };
-
-        window.editTask = function(id) {
-            const task = tasks.find(t => t.id === id);
-            if (!task) return;
-
-            const newTitle = prompt("Edit Task Name:", task.title);
-            if (newTitle !== null && newTitle.trim() !== "") {
-                task.title = newTitle.trim();
-                const newRating = prompt("Edit Duration Rating (1 = Short, 2 = Medium, 3 = Long):", task.rating);
-                if (newRating && ['1', '2', '3'].includes(newRating.trim())) {
-                    task.rating = parseInt(newRating.trim(), 10);
-                }
-                calculateAndRender();
-            }
         };
 
         function formatTimeShort(date) {
