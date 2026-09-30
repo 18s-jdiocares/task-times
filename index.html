@@ -132,6 +132,7 @@
         .badge-blue { background: #3b82f6; color: #ffffff; }
         .badge-amber { background: #d97706; color: #ffffff; }
         .badge-red { background: #ef4444; color: #ffffff; }
+        .badge-teal { background: #14b8a6; color: #ffffff; }
 
         ::-webkit-scrollbar {
             width: 8px;
@@ -193,19 +194,25 @@
                         <span class="pill-badge badge-amber"><i class="fa-solid fa-lock text-[10px] text-white"></i> Fixed Events</span>
                     </div>
 
-                    <!-- Day Timeline Parameters -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="space-y-1">
+                    <!-- Day Timeline Parameters & Auto Start Toggle -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
                             <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                                 <i class="fa-solid fa-play text-emerald-400"></i> Start Work Time
                             </label>
-                            <input type="time" id="startTimeInput" class="aero-input w-full px-3 py-2 rounded-xl text-sm font-mono text-emerald-300">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                                <i class="fa-solid fa-bed text-purple-300"></i> Target Bedtime
+                            <label class="flex items-center gap-1.5 cursor-pointer text-xs text-emerald-300 font-medium">
+                                <input type="checkbox" id="autoStartToggle" checked class="w-3.5 h-3.5 rounded bg-black/40 border-white/20 text-purple-500 focus:ring-purple-500 cursor-pointer">
+                                <span>Auto Start (Now)</span>
                             </label>
-                            <input type="time" id="bedtimeInput" value="23:00" class="aero-input w-full px-3 py-2 rounded-xl text-sm font-mono text-purple-300">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                                <input type="time" id="startTimeInput" class="aero-input w-full px-3 py-2 rounded-xl text-sm font-mono text-emerald-300">
+                            </div>
+                            <div class="space-y-1">
+                                <input type="time" id="bedtimeInput" value="23:00" class="aero-input w-full px-3 py-2 rounded-xl text-sm font-mono text-purple-300" title="Target Bedtime">
+                            </div>
                         </div>
                     </div>
 
@@ -261,7 +268,7 @@
                         <span class="pill-badge badge-purple"><i class="fa-solid fa-wand-magic-sparkles text-[10px] text-white"></i> Proportional</span>
                     </div>
 
-                    <!-- Work Duration Input Field with Right-Aligned Clock Icon -->
+                    <!-- Work Duration Input Field -->
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
                             <span class="text-pink-300 flex items-center gap-1.5">
@@ -271,8 +278,6 @@
                         </label>
                         <div class="relative flex items-center">
                             <input type="number" id="totalDurationInput" min="1" max="1440" value="205" placeholder="e.g. 205" class="aero-input w-full pl-4 pr-11 py-2.5 rounded-xl text-lg font-bold text-pink-200 tracking-wider">
-                            
-                            <!-- Bright glowing white/pink clock icon positioned on the RIGHT side -->
                             <div class="absolute right-3.5 top-1/2 -translate-y-1/2 text-pink-300 text-base pointer-events-none flex items-center justify-center drop-shadow-[0_0_8px_rgba(244,114,182,0.6)]">
                                 <i class="fa-solid fa-clock"></i>
                             </div>
@@ -297,8 +302,8 @@
                         <div class="space-y-2">
                             <input type="text" id="taskTitleInput" placeholder="Task Title (e.g. Lang - Lewis, Titration...)" class="aero-input w-full px-3 py-2 rounded-lg text-xs">
                             
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div class="space-y-1">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <div class="space-y-1 sm:col-span-2">
                                     <label class="text-[11px] text-slate-400 font-medium">Length Rating</label>
                                     <select id="taskRatingSelect" class="aero-input w-full px-3 py-2 rounded-lg text-xs font-medium">
                                         <option value="1">1 - Short (1x Weight)</option>
@@ -306,7 +311,7 @@
                                         <option value="3">3 - Long (3x Weight)</option>
                                     </select>
                                 </div>
-                                <div class="flex items-end">
+                                <div class="flex items-end sm:col-span-1">
                                     <button id="addTaskBtn" class="aero-btn w-full py-2 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1.5">
                                         <i class="fa-solid fa-plus text-white"></i> Add Task
                                     </button>
@@ -358,7 +363,7 @@
                         <div id="metricTaskCount" class="text-base font-bold text-white font-mono mt-0.5">0</div>
                     </div>
                     <div class="bg-black/30 border border-white/10 rounded-xl p-3 text-center min-w-[90px]">
-                        <div class="text-[11px] text-slate-400 font-medium">Total Rating Weight</div>
+                        <div class="text-[11px] text-slate-400 font-medium font-medium">Total Weight</div>
                         <div id="metricTotalWeight" class="text-base font-bold text-purple-300 font-mono mt-0.5">0x</div>
                     </div>
                     <div class="bg-black/30 border border-white/10 rounded-xl p-3 text-center min-w-[90px]">
@@ -432,6 +437,7 @@
         const taskTitleInput = document.getElementById('taskTitleInput');
         const taskRatingSelect = document.getElementById('taskRatingSelect');
         const startTimeInput = document.getElementById('startTimeInput');
+        const autoStartToggle = document.getElementById('autoStartToggle');
         const bedtimeInput = document.getElementById('bedtimeInput');
         
         const eventTitleInput = document.getElementById('eventTitleInput');
@@ -463,22 +469,22 @@
         const masterTimelineContainer = document.getElementById('masterTimelineContainer');
         const activeCountBadge = document.getElementById('activeCountBadge');
 
-        // Sample Task Data Pre-populated
+        // Sample Task Data
         const sampleTasks = [
-            { id: 1, title: 'lang', rating: 3, completed: false },
-            { id: 2, title: 'nhs', rating: 1, completed: false },
-            { id: 3, title: 'jazz', rating: 3, completed: false },
-            { id: 4, title: 'knowledge check', rating: 1, completed: false },
-            { id: 5, title: 'titration', rating: 2, completed: false },
-            { id: 6, title: 'lewis', rating: 3, completed: false },
-            { id: 7, title: 'annotations + space', rating: 2, completed: false },
-            { id: 8, title: 'wk5 warmups', rating: 1, completed: false },
-            { id: 9, title: 'secrets of the CC', rating: 3, completed: false },
-            { id: 10, title: 'discount', rating: 2, completed: false },
-            { id: 11, title: 'emerald solo (?)', rating: 2, completed: false },
-            { id: 12, title: 'identifying principles', rating: 1, completed: false },
-            { id: 13, title: 'brutus', rating: 1, completed: false },
-            { id: 14, title: 'wk4 warmups', rating: 1, completed: false }
+            { id: 1, title: 'lang', rating: 3, completed: false, fixedDuration: null },
+            { id: 2, title: 'nhs', rating: 1, completed: false, fixedDuration: null },
+            { id: 3, title: 'jazz', rating: 3, completed: false, fixedDuration: null },
+            { id: 4, title: 'knowledge check', rating: 1, completed: false, fixedDuration: 15 },
+            { id: 5, title: 'titration', rating: 2, completed: false, fixedDuration: null },
+            { id: 6, title: 'lewis', rating: 3, completed: false, fixedDuration: null },
+            { id: 7, title: 'annotations + space', rating: 2, completed: false, fixedDuration: null },
+            { id: 8, title: 'wk5 warmups', rating: 1, completed: false, fixedDuration: null },
+            { id: 9, title: 'secrets of the CC', rating: 3, completed: false, fixedDuration: null },
+            { id: 10, title: 'discount', rating: 2, completed: false, fixedDuration: null },
+            { id: 11, title: 'emerald solo (?)', rating: 2, completed: false, fixedDuration: null },
+            { id: 12, title: 'identifying principles', rating: 1, completed: false, fixedDuration: null },
+            { id: 13, title: 'brutus', rating: 1, completed: false, fixedDuration: null },
+            { id: 14, title: 'wk4 warmups', rating: 1, completed: false, fixedDuration: null }
         ];
 
         // Sample Fixed Events
@@ -491,14 +497,42 @@
         let tasks = [...sampleTasks.map(t => ({ ...t }))];
         let fixedEvents = [...sampleEvents.map(e => ({ ...e }))];
 
-        // Palette for timeline segments
+        // Color Palette
         const colorPalette = [
             'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-cyan-500',
             'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-blue-500',
             'bg-teal-500', 'bg-violet-500', 'bg-fuchsia-500', 'bg-sky-500'
         ];
 
-        // Safe numeric parser helper
+        function getCurrentTimeStr() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            return `${h}:${m}`;
+        }
+
+        function syncAutoStartTime() {
+            if (autoStartToggle.checked) {
+                startTimeInput.value = getCurrentTimeStr();
+                startTimeInput.disabled = true;
+                startTimeInput.classList.add('opacity-60');
+            } else {
+                startTimeInput.disabled = false;
+                startTimeInput.classList.remove('opacity-60');
+            }
+        }
+
+        // Live Auto Start interval (syncs time continuously if toggle is enabled)
+        setInterval(() => {
+            if (autoStartToggle.checked) {
+                const nowStr = getCurrentTimeStr();
+                if (startTimeInput.value !== nowStr) {
+                    startTimeInput.value = nowStr;
+                    calculateAndRender();
+                }
+            }
+        }, 30000);
+
         function getSanitizedInput(inputElement, defaultValue = 0) {
             if (!inputElement || inputElement.value === undefined || inputElement.value === null) {
                 return defaultValue;
@@ -509,7 +543,6 @@
             return isNaN(parsed) ? defaultValue : parsed;
         }
 
-        // Quick Presets
         function setQuickDuration(val) {
             totalDurationInput.value = val;
             calculateAndRender();
@@ -533,11 +566,9 @@
         }
 
         function initDefaults() {
-            const now = new Date();
-            const h = String(now.getHours()).padStart(2, '0');
-            const m = String(now.getMinutes()).padStart(2, '0');
-            startTimeInput.value = `${h}:${m}`;
+            syncAutoStartTime();
             
+            const now = new Date();
             const evtStart = new Date(now.getTime() + 60 * 60 * 1000);
             const evtEnd = new Date(evtStart.getTime() + 30 * 60 * 1000);
 
@@ -548,7 +579,11 @@
             calculateAndRender();
         }
 
-        // Add Fixed Routine Event
+        autoStartToggle.addEventListener('change', () => {
+            syncAutoStartTime();
+            calculateAndRender();
+        });
+
         addEventBtn.addEventListener('click', () => {
             const title = eventTitleInput.value.trim() || 'Fixed Event';
             const startVal = eventStartTimeInput.value;
@@ -660,7 +695,6 @@
             }
         });
 
-        // Add Task Item
         addTaskBtn.addEventListener('click', () => {
             const title = taskTitleInput.value.trim();
             const rating = getSanitizedInput(taskRatingSelect, 2);
@@ -674,7 +708,8 @@
                 id: Date.now(),
                 title: title,
                 rating: Math.max(1, Math.min(3, rating)),
-                completed: false
+                completed: false,
+                fixedDuration: null
             });
 
             taskTitleInput.value = '';
@@ -685,7 +720,41 @@
             if (e.key === 'Enter') addTaskBtn.click();
         });
 
-        // Exact-Sum Multiple-of-5 Allocation Engine
+        // Reordering Tasks Engine
+        window.moveTask = function(id, direction) {
+            const idx = tasks.findIndex(t => t.id === id);
+            if (idx === -1) return;
+
+            const targetIdx = idx + direction;
+            if (targetIdx < 0 || targetIdx >= tasks.length) return;
+
+            const temp = tasks[idx];
+            tasks[idx] = tasks[targetIdx];
+            tasks[targetIdx] = temp;
+
+            calculateAndRender();
+        };
+
+        // Toggle / Edit Task Fixed Time
+        window.toggleTaskFixedTime = function(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            if (task.fixedDuration !== null) {
+                task.fixedDuration = null;
+            } else {
+                const inputVal = prompt(`Set fixed length in minutes for "${task.title}":`, "20");
+                if (inputVal !== null) {
+                    const parsed = parseInt(inputVal.trim(), 10);
+                    if (!isNaN(parsed) && parsed > 0) {
+                        task.fixedDuration = Math.round(parsed / 5) * 5 || 5;
+                    }
+                }
+            }
+            calculateAndRender();
+        };
+
+        // Allocation Engine supporting fixed-length task overrides
         function allocateTaskTimes() {
             const targetTotal = getSanitizedInput(totalDurationInput, 0);
 
@@ -699,15 +768,24 @@
                 };
             }
 
-            const totalWeight = tasks.reduce((sum, t) => sum + (t.rating || 1), 0);
-            if (totalWeight <= 0) {
-                return { allocatedTasks: [], totalAllocated: 0, targetTotal: targetTotal, totalWeight: 0, unroundedBaseUnit: 0 };
-            }
+            // Separate fixed duration tasks and dynamic proportional tasks
+            let fixedSum = 0;
+            const dynamicTasks = [];
 
-            const unroundedBaseUnit = targetTotal / totalWeight;
+            tasks.forEach(t => {
+                if (t.fixedDuration !== null && t.fixedDuration > 0) {
+                    fixedSum += t.fixedDuration;
+                } else {
+                    dynamicTasks.push(t);
+                }
+            });
 
-            // Step 1: Initial proportional allocation and nearest-5 rounding
-            let items = tasks.map(t => {
+            const remainingTotal = Math.max(0, targetTotal - fixedSum);
+            const totalWeight = dynamicTasks.reduce((sum, t) => sum + (t.rating || 1), 0);
+            const unroundedBaseUnit = totalWeight > 0 ? remainingTotal / totalWeight : 0;
+
+            // Step 1: Compute proportional allocations for non-fixed tasks
+            let dynamicAllocated = dynamicTasks.map(t => {
                 const weight = t.rating || 1;
                 const exactRaw = weight * unroundedBaseUnit;
                 const roundedTo5 = Math.round(exactRaw / 5) * 5;
@@ -722,43 +800,57 @@
                 };
             });
 
-            let currentSum = items.reduce((sum, t) => sum + t.allocated, 0);
-            let diff = targetTotal - currentSum;
+            if (dynamicTasks.length > 0) {
+                let currentDynamicSum = dynamicAllocated.reduce((sum, t) => sum + t.allocated, 0);
+                let diff = remainingTotal - currentDynamicSum;
 
-            let iterations = 0;
-            const maxIterations = 500;
+                let iterations = 0;
+                const maxIterations = 500;
 
-            // Step 2: Adjust residuals in 5-minute increments until exact target sum is reached
-            while (diff !== 0 && iterations < maxIterations) {
-                iterations++;
-                if (diff > 0) {
-                    items.sort((a, b) => b.residual - a.residual);
-                    items[0].allocated += 5;
-                    items[0].residual -= 5;
-                    diff -= 5;
-                } else {
-                    items.sort((a, b) => a.residual - b.residual);
-                    let targetItem = items.find(i => i.allocated > 5) || items[0];
-                    targetItem.allocated -= 5;
-                    targetItem.residual += 5;
-                    diff += 5;
+                while (diff !== 0 && iterations < maxIterations) {
+                    iterations++;
+                    if (diff > 0) {
+                        dynamicAllocated.sort((a, b) => b.residual - a.residual);
+                        dynamicAllocated[0].allocated += 5;
+                        dynamicAllocated[0].residual -= 5;
+                        diff -= 5;
+                    } else {
+                        dynamicAllocated.sort((a, b) => a.residual - b.residual);
+                        let targetItem = dynamicAllocated.find(i => i.allocated > 5) || dynamicAllocated[0];
+                        targetItem.allocated -= 5;
+                        targetItem.residual += 5;
+                        diff += 5;
+                    }
                 }
             }
 
-            // Restore original task order
-            const orderMap = new Map(tasks.map((t, idx) => [t.id, idx]));
-            items.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+            const dynamicMap = new Map(dynamicAllocated.map(t => [t.id, t]));
+
+            // Combine fixed and dynamic tasks in user order
+            const finalAllocatedTasks = tasks.map(t => {
+                if (t.fixedDuration !== null && t.fixedDuration > 0) {
+                    return {
+                        ...t,
+                        exactRaw: t.fixedDuration,
+                        allocated: t.fixedDuration,
+                        isTaskFixed: true
+                    };
+                } else {
+                    return dynamicMap.get(t.id) || { ...t, exactRaw: 0, allocated: 0 };
+                }
+            });
+
+            const totalAllocated = finalAllocatedTasks.reduce((sum, t) => sum + t.allocated, 0);
 
             return {
-                allocatedTasks: items,
-                totalAllocated: targetTotal,
+                allocatedTasks: finalAllocatedTasks,
+                totalAllocated: totalAllocated,
                 targetTotal: targetTotal,
                 totalWeight: totalWeight,
                 unroundedBaseUnit: unroundedBaseUnit
             };
         }
 
-        // Render Combined Master Timeline and Views
         function calculateAndRender() {
             calculateAvailableWorkWindow();
 
@@ -777,14 +869,18 @@
             } else if (totalAllocated === targetTotal) {
                 matchStatusBadge.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-950"></i> EXACT MATCH`;
                 matchStatusBadge.className = "pill-badge badge-green";
-                calculationSummarySubtext.textContent = `All ${allocatedTasks.length} task durations are exact multiples of 5 and sum to precisely ${targetTotal} minutes.`;
+                calculationSummarySubtext.textContent = `All ${allocatedTasks.length} tasks fit precisely within ${targetTotal} minutes.`;
+            } else {
+                matchStatusBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-950"></i> OVERFLOW`;
+                matchStatusBadge.className = "pill-badge badge-yellow";
+                calculationSummarySubtext.textContent = `Fixed task lengths exceed total target duration.`;
             }
 
             metricTaskCount.textContent = allocatedTasks.length;
             metricTotalWeight.textContent = `${totalWeight}x`;
             metricBaseUnit.textContent = `${unroundedBaseUnit.toFixed(1)}m`;
 
-            const unadjustedNearestSum = allocatedTasks.reduce((sum, t) => sum + (Math.round(t.exactRaw / 5) * 5), 0);
+            const unadjustedNearestSum = allocatedTasks.reduce((sum, t) => sum + (t.isTaskFixed ? t.allocated : (Math.round(t.exactRaw / 5) * 5)), 0);
             const delta = totalAllocated - unadjustedNearestSum;
             metricDelta.textContent = `${delta >= 0 ? '+' : ''}${delta}m`;
 
@@ -829,7 +925,6 @@
                 return;
             }
 
-            // Construct Chronological Schedule Engine
             let startBase = new Date();
             if (startTimeInput.value) {
                 const [sh, sm] = startTimeInput.value.split(':').map(Number);
@@ -912,8 +1007,7 @@
                 }
             }
 
-            // Render Task & Schedule Item Cards
-            masterTimelineItems.forEach(item => {
+            masterTimelineItems.forEach((item, itemIndex) => {
                 const card = document.createElement('div');
 
                 if (item.type === 'FIXED') {
@@ -941,16 +1035,33 @@
                         ratingLabel = "3x Long";
                     }
 
+                    const isFixedTask = item.fixedDuration !== null && item.fixedDuration > 0;
+
                     card.className = `aero-card p-4 space-y-2.5 relative flex flex-col justify-between transition hover:border-white/30 ${item.completed ? 'opacity-50' : ''}`;
                     card.innerHTML = `
                         <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-2.5 overflow-hidden">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <!-- Reorder Buttons -->
+                                <div class="flex flex-col gap-0.5 shrink-0 pr-1">
+                                    <button onclick="moveTask(${item.id}, -1)" class="text-slate-400 hover:text-purple-300 text-[10px] transition" title="Move Up">
+                                        <i class="fa-solid fa-chevron-up"></i>
+                                    </button>
+                                    <button onclick="moveTask(${item.id}, 1)" class="text-slate-400 hover:text-purple-300 text-[10px] transition" title="Move Down">
+                                        <i class="fa-solid fa-chevron-down"></i>
+                                    </button>
+                                </div>
+
                                 <input type="checkbox" id="check-${item.id}" ${item.completed ? 'checked' : ''} class="task-checkbox w-4 h-4 rounded border-white/20 bg-black/40 text-purple-600 focus:ring-purple-500 cursor-pointer">
                                 <label for="check-${item.id}" class="font-bold text-sm text-slate-100 truncate cursor-pointer hover:text-purple-300 transition">
                                     ${escapeHtml(item.title)}
                                 </label>
                             </div>
+
                             <div class="flex items-center gap-2 shrink-0">
+                                <button onclick="toggleTaskFixedTime(${item.id})" class="pill-badge ${isFixedTask ? 'badge-teal' : 'aero-btn-secondary text-slate-300'} cursor-pointer" title="Click to toggle fixed time length">
+                                    <i class="fa-solid ${isFixedTask ? 'fa-pin' : 'fa-clock'} text-[10px]"></i>
+                                    ${isFixedTask ? `Fixed (${item.fixedDuration}m)` : 'Auto Time'}
+                                </button>
                                 <span class="pill-badge ${ratingBadgeClass}">
                                     ${ratingLabel}
                                 </span>
@@ -958,8 +1069,9 @@
                         </div>
 
                         <div class="flex items-baseline justify-between pt-1">
-                            <div class="text-2xl font-black text-pink-300 font-mono tracking-tight">
+                            <div class="text-2xl font-black text-pink-300 font-mono tracking-tight flex items-baseline gap-1.5">
                                 ${item.allocated} <span class="text-xs font-normal text-slate-400">mins</span>
+                                ${isFixedTask ? '<span class="text-[10px] font-sans font-bold text-teal-300 uppercase tracking-wide px-1.5 py-0.5 bg-teal-950/60 rounded border border-teal-500/30">Locked Length</span>' : ''}
                             </div>
                             <div class="text-right text-xs font-mono text-slate-300">
                                 <div class="flex items-center justify-end gap-1">
@@ -1034,7 +1146,6 @@
             });
         }
 
-        // Event listeners for smooth live updates
         totalDurationInput.addEventListener('input', calculateAndRender);
         totalDurationInput.addEventListener('keyup', calculateAndRender);
         totalDurationInput.addEventListener('change', calculateAndRender);
@@ -1074,7 +1185,7 @@
                 text += `[FIXED EVENT] ${e.title} @ ${e.startTime} - ${e.endTime} (${e.duration} mins)\n`;
             });
             allocatedTasks.forEach(t => {
-                text += `• ${t.title} - ${t.allocated} mins\n`;
+                text += `• ${t.title} - ${t.allocated} mins${t.fixedDuration ? ' (Fixed)' : ''}\n`;
             });
 
             const dummy = document.createElement('textarea');
@@ -1110,7 +1221,7 @@
 
             text += `ALLOCATED WORK TASKS:\n`;
             allocatedTasks.forEach((t, i) => {
-                text += `${i + 1}. [${t.completed ? 'X' : ' '}] ${t.title} - ${t.allocated} minutes (Weight: ${t.rating}x)\n`;
+                text += `${i + 1}. [${t.completed ? 'X' : ' '}] ${t.title} - ${t.allocated} minutes ${t.fixedDuration ? '[Fixed Length]' : `(Weight: ${t.rating}x)`}\n`;
             });
 
             const blob = new Blob([text], { type: 'text/plain' });
