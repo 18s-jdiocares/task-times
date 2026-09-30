@@ -475,10 +475,10 @@
                     </div>
                 </div>
 
-                <!-- Fields for Dynamic Tasks -->
+                <!-- Fields for Dynamic Tasks with Fixed Start & End Time Override -->
                 <div id="taskFields" class="space-y-3 hidden">
                     <div class="space-y-1">
-                        <label class="text-xs font-semibold text-slate-300">Length Rating</label>
+                        <label class="text-xs font-semibold text-slate-300">Length Rating (for Proportional Mode)</label>
                         <select id="editModalRatingSelect" class="aero-input w-full px-3 py-2 rounded-lg text-xs font-medium">
                             <option value="1">1 - Short (1x Weight)</option>
                             <option value="2">2 - Medium (2x Weight)</option>
@@ -486,12 +486,31 @@
                         </select>
                     </div>
 
-                    <div class="space-y-1">
-                        <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
-                            <span>Fixed Length (Minutes)</span>
-                            <span class="text-[10px] text-slate-400">Leave empty/0 for auto proportional time</span>
-                        </label>
-                        <input type="number" id="editModalFixedDurationInput" placeholder="e.g. 20 (multiples of 5)" min="0" step="5" class="aero-input w-full px-3 py-2 rounded-lg text-sm font-mono text-teal-300">
+                    <!-- Start & End Time Selection for Fixed Length Tasks -->
+                    <div class="space-y-2 pt-3 border-t border-white/10">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-clock text-teal-300"></i> Fixed Time Range
+                            </label>
+                            <button type="button" onclick="clearTaskFixedTimes()" class="text-[11px] text-teal-400 hover:text-teal-200 underline font-medium">
+                                Reset to Auto
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                                <label class="text-[11px] text-slate-400 font-medium">Start Time</label>
+                                <input type="time" id="editModalTaskStartTimeInput" class="aero-input w-full px-3 py-2 rounded-lg text-sm font-mono text-teal-300">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[11px] text-slate-400 font-medium">End Time</label>
+                                <input type="time" id="editModalTaskEndTimeInput" class="aero-input w-full px-3 py-2 rounded-lg text-sm font-mono text-teal-300">
+                            </div>
+                        </div>
+
+                        <div id="taskDurationPreview" class="text-xs font-mono text-slate-400 bg-black/40 border border-white/10 rounded-lg p-2 text-center transition">
+                            Duration: Auto (Proportional based on weight)
+                        </div>
                     </div>
                 </div>
             </div>
@@ -556,24 +575,26 @@
         const editModalEndTimeInput = document.getElementById('editModalEndTimeInput');
         const taskFields = document.getElementById('taskFields');
         const editModalRatingSelect = document.getElementById('editModalRatingSelect');
-        const editModalFixedDurationInput = document.getElementById('editModalFixedDurationInput');
+        const editModalTaskStartTimeInput = document.getElementById('editModalTaskStartTimeInput');
+        const editModalTaskEndTimeInput = document.getElementById('editModalTaskEndTimeInput');
+        const taskDurationPreview = document.getElementById('taskDurationPreview');
 
         // Sample Task Data
         const sampleTasks = [
-            { id: 1, title: 'lang', rating: 3, completed: false, fixedDuration: null },
-            { id: 2, title: 'nhs', rating: 1, completed: false, fixedDuration: null },
-            { id: 3, title: 'jazz', rating: 3, completed: false, fixedDuration: null },
-            { id: 4, title: 'knowledge check', rating: 1, completed: false, fixedDuration: 15 },
-            { id: 5, title: 'titration', rating: 2, completed: false, fixedDuration: null },
-            { id: 6, title: 'lewis', rating: 3, completed: false, fixedDuration: null },
-            { id: 7, title: 'annotations + space', rating: 2, completed: false, fixedDuration: null },
-            { id: 8, title: 'wk5 warmups', rating: 1, completed: false, fixedDuration: null },
-            { id: 9, title: 'secrets of the CC', rating: 3, completed: false, fixedDuration: null },
-            { id: 10, title: 'discount', rating: 2, completed: false, fixedDuration: null },
-            { id: 11, title: 'emerald solo (?)', rating: 2, completed: false, fixedDuration: null },
-            { id: 12, title: 'identifying principles', rating: 1, completed: false, fixedDuration: null },
-            { id: 13, title: 'brutus', rating: 1, completed: false, fixedDuration: null },
-            { id: 14, title: 'wk4 warmups', rating: 1, completed: false, fixedDuration: null }
+            { id: 1, title: 'lang', rating: 3, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 2, title: 'nhs', rating: 1, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 3, title: 'jazz', rating: 3, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 4, title: 'knowledge check', rating: 1, completed: false, fixedDuration: 15, fixedStartTime: "17:15", fixedEndTime: "17:30" },
+            { id: 5, title: 'titration', rating: 2, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 6, title: 'lewis', rating: 3, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 7, title: 'annotations + space', rating: 2, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 8, title: 'wk5 warmups', rating: 1, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 9, title: 'secrets of the CC', rating: 3, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 10, title: 'discount', rating: 2, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 11, title: 'emerald solo (?)', rating: 2, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 12, title: 'identifying principles', rating: 1, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 13, title: 'brutus', rating: 1, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null },
+            { id: 14, title: 'wk4 warmups', rating: 1, completed: false, fixedDuration: null, fixedStartTime: null, fixedEndTime: null }
         ];
 
         // Sample Fixed Events
@@ -802,7 +823,9 @@
                 title: title,
                 rating: Math.max(1, Math.min(3, rating)),
                 completed: false,
-                fixedDuration: null
+                fixedDuration: null,
+                fixedStartTime: null,
+                fixedEndTime: null
             });
 
             taskTitleInput.value = '';
@@ -813,18 +836,53 @@
             if (e.key === 'Enter') addTaskBtn.click();
         });
 
-        // Toggle / Edit Task Fixed Time
+        // Toggle / Edit Task Fixed Time via Modal
         window.toggleTaskFixedTime = function(id) {
             const task = tasks.find(t => t.id === id);
             if (!task) return;
 
-            if (task.fixedDuration !== null) {
+            if (task.fixedDuration !== null || task.fixedStartTime !== null) {
+                // Clear fixed duration
                 task.fixedDuration = null;
+                task.fixedStartTime = null;
+                task.fixedEndTime = null;
+                calculateAndRender();
             } else {
+                // Open edit modal directly to specify Start & End time
                 openEditModal(id, 'TASK');
-                return;
             }
-            calculateAndRender();
+        };
+
+        // Live task duration calculation preview for Task Edit Modal
+        function updateTaskDurationPreview() {
+            const startVal = editModalTaskStartTimeInput.value;
+            const endVal = editModalTaskEndTimeInput.value;
+
+            if (startVal && endVal) {
+                const dur = calculateDurationFromTimes(startVal, endVal);
+                if (dur > 0) {
+                    taskDurationPreview.textContent = `Calculated Fixed Duration: ${dur} mins (${startVal} - ${endVal})`;
+                    taskDurationPreview.className = "text-xs font-mono text-teal-300 bg-teal-950/60 border border-teal-500/40 rounded-lg p-2 text-center font-bold";
+                } else {
+                    taskDurationPreview.textContent = "Invalid range: End time must be after start time";
+                    taskDurationPreview.className = "text-xs font-mono text-rose-300 bg-rose-950/60 border border-rose-500/40 rounded-lg p-2 text-center font-bold";
+                }
+            } else if (startVal || endVal) {
+                taskDurationPreview.textContent = "Please provide both Start and End time to lock length";
+                taskDurationPreview.className = "text-xs font-mono text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-lg p-2 text-center font-semibold";
+            } else {
+                taskDurationPreview.textContent = "Duration: Auto (Proportional based on weight)";
+                taskDurationPreview.className = "text-xs font-mono text-slate-400 bg-black/40 border border-white/10 rounded-lg p-2 text-center";
+            }
+        }
+
+        editModalTaskStartTimeInput.addEventListener('input', updateTaskDurationPreview);
+        editModalTaskEndTimeInput.addEventListener('input', updateTaskDurationPreview);
+
+        window.clearTaskFixedTimes = function() {
+            editModalTaskStartTimeInput.value = '';
+            editModalTaskEndTimeInput.value = '';
+            updateTaskDurationPreview();
         };
 
         // Modal Edit Management
@@ -848,7 +906,10 @@
                 editModalTitle.innerHTML = `<i class="fa-solid fa-pen-to-square text-pink-400"></i> Edit Task Item`;
                 editModalTitleInput.value = task.title;
                 editModalRatingSelect.value = task.rating || 2;
-                editModalFixedDurationInput.value = task.fixedDuration !== null ? task.fixedDuration : '';
+                
+                editModalTaskStartTimeInput.value = task.fixedStartTime || '';
+                editModalTaskEndTimeInput.value = task.fixedEndTime || '';
+                updateTaskDurationPreview();
 
                 fixedEventFields.classList.add('hidden');
                 taskFields.classList.remove('hidden');
@@ -896,12 +957,22 @@
                     task.title = newTitle;
                     task.rating = parseInt(editModalRatingSelect.value, 10);
                     
-                    const fixVal = editModalFixedDurationInput.value.trim();
-                    if (fixVal !== '' && !isNaN(parseInt(fixVal, 10)) && parseInt(fixVal, 10) > 0) {
-                        const parsed = parseInt(fixVal, 10);
-                        task.fixedDuration = Math.round(parsed / 5) * 5 || 5;
+                    const startVal = editModalTaskStartTimeInput.value;
+                    const endVal = editModalTaskEndTimeInput.value;
+
+                    if (startVal && endVal) {
+                        const dur = calculateDurationFromTimes(startVal, endVal);
+                        if (dur <= 0) {
+                            alert('End time must be after start time.');
+                            return;
+                        }
+                        task.fixedDuration = dur;
+                        task.fixedStartTime = startVal;
+                        task.fixedEndTime = endVal;
                     } else {
                         task.fixedDuration = null;
+                        task.fixedStartTime = null;
+                        task.fixedEndTime = null;
                     }
                 }
             }
@@ -1277,9 +1348,9 @@
                             </div>
 
                             <div class="flex items-center gap-2 shrink-0">
-                                <button onclick="toggleTaskFixedTime(${item.id})" class="pill-badge ${isFixedTask ? 'badge-teal' : 'aero-btn-secondary text-slate-300'} cursor-pointer" title="Click to toggle fixed time length">
-                                    <i class="fa-solid ${isFixedTask ? 'fa-pin' : 'fa-clock'} text-[10px]"></i>
-                                    ${isFixedTask ? `Fixed (${item.fixedDuration}m)` : 'Auto Time'}
+                                <button onclick="toggleTaskFixedTime(${item.id})" class="pill-badge ${isFixedTask ? 'badge-teal' : 'aero-btn-secondary text-slate-300'} cursor-pointer" title="Click to edit or clear fixed time range">
+                                    <i class="fa-solid ${isFixedTask ? 'fa-clock' : 'fa-wand-magic-sparkles'} text-[10px]"></i>
+                                    ${isFixedTask ? `Fixed (${item.fixedStartTime ? item.fixedStartTime + '-' + item.fixedEndTime : item.fixedDuration + 'm'})` : 'Auto Time'}
                                 </button>
                                 <span class="pill-badge ${ratingBadgeClass}">
                                     ${ratingLabel}
@@ -1290,7 +1361,7 @@
                         <div class="flex items-baseline justify-between pt-1">
                             <div class="text-2xl font-black text-pink-300 font-mono tracking-tight flex items-baseline gap-1.5">
                                 ${item.allocated} <span class="text-xs font-normal text-slate-400">mins</span>
-                                ${isFixedTask ? '<span class="text-[10px] font-sans font-bold text-teal-300 uppercase tracking-wide px-1.5 py-0.5 bg-teal-950/60 rounded border border-teal-500/30">Locked Length</span>' : ''}
+                                ${isFixedTask ? '<span class="text-[10px] font-sans font-bold text-teal-300 uppercase tracking-wide px-1.5 py-0.5 bg-teal-950/60 rounded border border-teal-500/30">Locked Times</span>' : ''}
                             </div>
                             <div class="text-right text-xs font-mono text-slate-300">
                                 <div class="flex items-center justify-end gap-1">
@@ -1303,10 +1374,10 @@
                         <div class="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
                             <span class="text-slate-400">Unrounded: ${(item.exactRaw || item.allocated).toFixed(1)}m</span>
                             <div class="flex items-center gap-2">
-                                <button onclick="openEditModal(${item.id}, 'TASK')" class="hover:text-purple-300 transition text-slate-300" title="Edit Task">
-                                    <i class="fa-solid fa-pen text-xs text-purple-300"></i>
+                                <button onclick="openEditModal(${item.id}, 'TASK')" class="hover:text-purple-300 transition text-slate-300 flex items-center gap-1" title="Edit Task Times & Details">
+                                    <i class="fa-solid fa-pen text-xs text-purple-300"></i> Edit
                                 </button>
-                                <button onclick="removeTask(${item.id})" class="hover:text-rose-400 transition text-slate-300" title="Delete Task">
+                                <button onclick="removeTask(${item.id})" class="hover:text-rose-400 transition text-slate-300 ml-1" title="Delete Task">
                                     <i class="fa-solid fa-trash-can text-xs text-rose-400"></i>
                                 </button>
                             </div>
@@ -1389,7 +1460,7 @@
                 text += `[FIXED EVENT] ${e.title} @ ${e.startTime} - ${e.endTime} (${e.duration} mins)\n`;
             });
             allocatedTasks.forEach(t => {
-                text += `• ${t.title} - ${t.allocated} mins${t.fixedDuration ? ' (Fixed)' : ''}\n`;
+                text += `• ${t.title} - ${t.allocated} mins${t.fixedDuration ? ` (Fixed: ${t.fixedStartTime ? t.fixedStartTime + '-' + t.fixedEndTime : t.fixedDuration + 'm'})` : ''}\n`;
             });
 
             const dummy = document.createElement('textarea');
@@ -1425,7 +1496,7 @@
 
             text += `ALLOCATED WORK TASKS:\n`;
             allocatedTasks.forEach((t, i) => {
-                text += `${i + 1}. [${t.completed ? 'X' : ' '}] ${t.title} - ${t.allocated} minutes ${t.fixedDuration ? '[Fixed Length]' : `(Weight: ${t.rating}x)`}\n`;
+                text += `${i + 1}. [${t.completed ? 'X' : ' '}] ${t.title} - ${t.allocated} minutes ${t.fixedDuration ? `[Fixed Time: ${t.fixedStartTime ? t.fixedStartTime + '-' + t.fixedEndTime : t.fixedDuration + 'm'}]` : `(Weight: ${t.rating}x)`}\n`;
             });
 
             const blob = new Blob([text], { type: 'text/plain' });
